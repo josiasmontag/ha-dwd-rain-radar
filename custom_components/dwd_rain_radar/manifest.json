@@ -1,0 +1,18 @@
+{
+  "domain": "dwd_rain_radar",
+  "name": "DWD Rain Radar",
+  "codeowners": [
+    "@josiasmontag"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/josiasmontag/ha-dwd-rain-radar",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/josiasmontag/ha-dwd-rain-radar/issues",
+  "requirements": [
+    "wradlib==2.1.0",
+    "numpy"
+  ],
+  "version": "0.1.0"
+}

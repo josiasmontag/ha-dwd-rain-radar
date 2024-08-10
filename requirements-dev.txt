@@ -1,0 +1,9 @@
+# From our manifest.json for our custom component
+wradlib==2.1.0
+numpy
+
+# Strictly for tests
+pytest-homeassistant-custom-component>=0.13.127
+pytest
+pytest-asyncio
+pytest-cov
