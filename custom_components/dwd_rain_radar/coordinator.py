@@ -69,4 +69,6 @@ class DwdRainRadarUpdateCoordinator(DataUpdateCoordinator):
         """Make sure closest predictions are first"""
         forecasts.sort(key=lambda forecast: forecast.prediction_time, reverse=False)
 
+        _LOGGER.debug("Fetched forecasts: {}".format(forecasts))
+
         return forecasts

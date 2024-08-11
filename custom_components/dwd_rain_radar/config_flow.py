@@ -19,52 +19,48 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class DwdRainRadarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for the DWD Rain Radar coordinator."""
 
     VERSION = 1
-    MINOR_VERSION = 1
 
     def __init__(self) -> None:
         """Initialize the config flow."""
         pass
 
-    async def async_step_user(self, user_input=None) -> FlowResult:
+    async def async_step_user(self, user_input=None):
         """Handle the user step.
 
-        Allows the user to specify a name and the coordinates of the location.
+        Allows the user to specify a name.
 
         """
+
+        _LOGGER.debug("User:user_input: {}".format(user_input))
+
         errors: dict[str, str] = {}
         placeholders: dict[str, str] = {}
 
         if user_input is not None:
-            data = user_input
 
-            if not data[CONF_NAME].lstrip(" "):
-                errors["base"] = "name_invalid"
+            if (CONF_COORDINATES not in user_input
+                    or "latitude" not in user_input[CONF_COORDINATES]
+                    or "longitude" not in user_input[CONF_COORDINATES]):
+                errors["base"] = "Invalid location"
 
             if not errors:
                 return self.async_create_entry(
-                    title=data[CONF_NAME],
-                    data=data,
+                    title=user_input[CONF_NAME],
+                    data=user_input,
                 )
 
         return self.async_show_form(
             step_id="user",
-            data_schema=self.get_shema_user_step(user_input),
+            data_schema=vol.Schema({
+                vol.Required(CONF_NAME, default="DWD Rain Radar", description="Name"): str,
+                vol.Optional(CONF_COORDINATES, description="Location"): selector.LocationSelector(
+                    selector.LocationSelectorConfig()
+                )
+            }),
             description_placeholders=placeholders,
             errors=errors,
         )
-
-    @callback
-    def get_shema_user_step(self) -> vol.Schema:
-        """Return the schema for the user step."""
-        schema = {
-            vol.Required(CONF_NAME): str,
-            vol.Required(CONF_COORDINATES): selector.LocationSelector(
-                selector.LocationSelectorConfig()
-            ),
-        }
-
-        return vol.Schema(schema)

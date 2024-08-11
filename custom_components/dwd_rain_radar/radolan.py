@@ -47,7 +47,7 @@ class Radolan:
         if resp.status_code != httpx.codes.OK:
             resp.raise_for_status()
 
-        self.curr_value = self._parse(await resp.read())
+        self.curr_value = self._parse(resp.read())
 
         return self.curr_value
 

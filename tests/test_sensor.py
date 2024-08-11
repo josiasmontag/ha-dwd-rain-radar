@@ -20,7 +20,7 @@ async def test_sensor(mock_get, hass, enable_custom_integrations):
     # Create a mock response object
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.read = AsyncMock(return_value=binary_data)  # Mock the read() method
+    mock_response.read = MagicMock(return_value=binary_data)  # Mock the read() method
 
     # Assign the mock response to the get request
     mock_get.return_value = mock_response
