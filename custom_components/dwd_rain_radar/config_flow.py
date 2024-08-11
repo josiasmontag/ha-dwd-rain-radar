@@ -23,6 +23,7 @@ class DwdRainRadarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for the DWD Rain Radar coordinator."""
 
     VERSION = 1
+    MINOR_VERSION = 1
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -56,7 +57,7 @@ class DwdRainRadarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
-                vol.Required(CONF_NAME, default="DWD Rain Radar", description="Name"): str,
+                vol.Required(CONF_NAME, default="DWD Radar", description="Name"): str,
                 vol.Optional(CONF_COORDINATES, description="Location"): selector.LocationSelector(
                     selector.LocationSelectorConfig()
                 )

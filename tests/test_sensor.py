@@ -38,9 +38,15 @@ async def test_sensor(mock_get, hass, enable_custom_integrations):
 
 
 
-    state = hass.states.get("sensor.mock_title_precipitation")
+    precipitation = hass.states.get("sensor.mock_title_precipitation")
 
-    assert state
-    assert state.state == '0.839999973773956'
-    assert state.attributes['unit_of_measurement'] == 'mm'
-    assert state.attributes['device_class'] == 'precipitation'
+    assert precipitation
+    assert precipitation.state == '0.839999973773956'
+    assert precipitation.attributes['unit_of_measurement'] == 'mm'
+    assert precipitation.attributes['device_class'] == 'precipitation'
+
+
+    rain_expected_at = hass.states.get("sensor.mock_title_rain_expected_at")
+
+    assert rain_expected_at
+    assert rain_expected_at.state == '2024-08-08T15:50:00'

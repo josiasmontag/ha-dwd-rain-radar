@@ -18,10 +18,12 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 
-from .const import DOMAIN
+from .const import DOMAIN, ATTRIBUTION
+from homeassistant.const import (
+    ATTR_ATTRIBUTION
+)
 from .coordinator import DwdRainRadarUpdateCoordinator, PrecipitationForecast
 from .entity import DwdCoordinatorEntity
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +32,8 @@ _LOGGER = logging.getLogger(__name__)
 class PrecipitationSensorEntityDescription(SensorEntityDescription):
     """Provide a description for a precipitation sensor."""
 
-    value_fn: Callable[[PrecipitationForecast], float | None]
+    value_fn: Callable[[PrecipitationForecast]]
+    extra_state_attributes_fn: Callable[[PrecipitationForecast], dict] = lambda _: {}
     exists_fn: Callable[[dict], bool] = lambda _: True
 
 
@@ -41,7 +44,25 @@ PRECIPTITATION_SENSORS = [
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda forecast: forecast.precipitation,
+        value_fn=lambda forecasts: forecasts[0].precipitation,
+        extra_state_attributes_fn=lambda forecasts: {
+            'prediction_time': forecasts[0].prediction_time
+        },
+    ),
+    PrecipitationSensorEntityDescription(
+        key="rain_expected_at",
+        name="Rain Expected At",
+        device_class=SensorDeviceClass.DATE,
+        value_fn=lambda forecasts: next(
+            (forecast.prediction_time for forecast in forecasts if forecast.precipitation > 0),
+            None
+        ),
+        extra_state_attributes_fn=lambda forecasts: {
+            'precipitation': next(
+                (forecast.precipitation for forecast in forecasts if forecast.precipitation > 0),
+                None
+            )
+        },
     )
 ]
 
@@ -72,14 +93,21 @@ class PrecipitationSensorEntity(DwdCoordinatorEntity, SensorEntity):
         super().__init__(coordinator, description)
 
         self._attr_unique_id = (
-            f"{self.coordinator.config_entry.entry_id}"
-            + f"_{self.entity_description.key}"
+                f"{self.coordinator.config_entry.entry_id}"
+                + f"_{self.entity_description.key}"
         )
 
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        forecasts = self.coordinator.data
-        assert forecasts[0] is not None
+        return self.entity_description.value_fn(self.coordinator.data)
 
-        return self.entity_description.value_fn(forecasts[0])
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes of the device."""
+        attributes = self.entity_description.extra_state_attributes_fn(self.coordinator.data)
+
+        attributes['latest_update'] = self.coordinator.latest_update
+        attributes[ATTR_ATTRIBUTION] = ATTRIBUTION
+
+        return attributes

@@ -5,6 +5,8 @@ from homeassistant.const import Platform
 
 DOMAIN = "dwd_rain_radar"
 
+ATTRIBUTION = "Data provided by Deutscher Wetterdienst (DWD)"
+
 PLATFORMS = [Platform.SENSOR]
 
 CONF_COORDINATES = "coordinates"

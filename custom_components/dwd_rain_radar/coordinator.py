@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
+import pandas as pd
 from dataclasses import dataclass
 from typing import List
 
@@ -32,7 +33,7 @@ class PrecipitationForecast:
     def from_radolan_data(cls, data) -> PrecipitationForecast:
         """Return instance of Precipitation."""
         return cls(
-            prediction_time=data.prediction_time.values[0],
+            prediction_time=pd.to_datetime(data.prediction_time.values[0]).to_pydatetime(),
             precipitation=data.RV.values.item()
         )
 
@@ -59,6 +60,7 @@ class DwdRainRadarUpdateCoordinator(DataUpdateCoordinator):
         self.lat = self.coords["latitude"]
         self.lon = self.coords["longitude"]
         self.radolan = Radolan(self.lat, self.lon, self.async_client)
+        self.latest_update = None
 
     async def _async_update_data(self) -> List[PrecipitationForecast]:
         """Update the data"""
@@ -70,5 +72,7 @@ class DwdRainRadarUpdateCoordinator(DataUpdateCoordinator):
         forecasts.sort(key=lambda forecast: forecast.prediction_time, reverse=False)
 
         _LOGGER.debug("Fetched forecasts: {}".format(forecasts))
+
+        self.latest_update = datetime.now()
 
         return forecasts
