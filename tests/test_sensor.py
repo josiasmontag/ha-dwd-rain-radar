@@ -1,5 +1,6 @@
 """Test sensor for DWD rain radar integration."""
 import os
+import time
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -23,6 +24,17 @@ def entity_registry_enabled_by_default() -> Generator[None]:
             return_value=True,
     ):
         yield
+
+@pytest.fixture(autouse=True)
+def set_timezone():
+    os.environ['TZ'] = 'Europe/Berlin'  # Set to your desired timezone
+    time.tzset()  # Apply the timezone setting
+
+    yield  # Run the test
+
+    # Cleanup after the test
+    del os.environ['TZ']
+    time.tzset()
 
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient.get', new_callable=AsyncMock)
