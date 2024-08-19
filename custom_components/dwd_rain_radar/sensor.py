@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone, timedelta
 from operator import attrgetter
 
 from homeassistant.core import HomeAssistant
@@ -18,7 +19,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 
-from .const import DOMAIN, ATTRIBUTION
+from .const import DOMAIN, ATTRIBUTION, FORECAST_MINUTES
 from homeassistant.const import (
     ATTR_ATTRIBUTION
 )
@@ -44,22 +45,70 @@ PRECIPTITATION_SENSORS = [
         native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
         device_class=SensorDeviceClass.PRECIPITATION,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda forecasts: forecasts[0].precipitation,
+        value_fn=lambda forecasts: next(
+            (forecast.precipitation for forecast in forecasts if
+             forecast.prediction_time > datetime.now().astimezone() - timedelta(minutes=5)),
+            None
+        ),
         extra_state_attributes_fn=lambda forecasts: {
-            'prediction_time': forecasts[0].prediction_time
+            'prediction_time': next(
+                (forecast.prediction_time for forecast in forecasts if
+                 forecast.prediction_time > datetime.now().astimezone() - timedelta(minutes=5)),
+                None
+            )
         },
     ),
+    *(PrecipitationSensorEntityDescription(
+        key=f"precipitation_in_{forecast_in}_minutes",
+        name=f"Precipitation In {forecast_in} Minutes",
+        entity_registry_enabled_default=False,
+        native_unit_of_measurement=UnitOfPrecipitationDepth.MILLIMETERS,
+        device_class=SensorDeviceClass.PRECIPITATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda forecasts, forecast_in=forecast_in: next(
+            (forecast.precipitation for forecast in forecasts if
+             forecast.prediction_time > datetime.now().astimezone() + timedelta(minutes=forecast_in - 5)),
+            None
+        ),
+        extra_state_attributes_fn=lambda forecasts, forecast_in=forecast_in: {
+            'prediction_time': next(
+                (forecast.prediction_time for forecast in forecasts if
+                 forecast.prediction_time > datetime.now().astimezone() + timedelta(minutes=forecast_in - 5)),
+                None
+            )
+        },
+    ) for forecast_in in FORECAST_MINUTES),
     PrecipitationSensorEntityDescription(
         key="rain_expected_at",
         name="Rain Expected At",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.DATE,
         value_fn=lambda forecasts: next(
-            (forecast.prediction_time for forecast in forecasts if forecast.precipitation > 0),
+            (forecast.prediction_time for forecast in forecasts if
+             forecast.precipitation > 0 and forecast.prediction_time > datetime.now().astimezone()),
             None
         ),
         extra_state_attributes_fn=lambda forecasts: {
             'precipitation': next(
-                (forecast.precipitation for forecast in forecasts if forecast.precipitation > 0),
+                (forecast.precipitation for forecast in forecasts if
+                 forecast.precipitation > 0 and forecast.prediction_time > datetime.now().astimezone()),
+                None
+            )
+        },
+    ),
+    PrecipitationSensorEntityDescription(
+        key="rain_expected_in_minutes",
+        name="Rain Expected In Minutes",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda forecasts: next(
+            (int((forecast.prediction_time - datetime.now().astimezone()).total_seconds() // 60) for forecast in
+             forecasts if forecast.precipitation > 0 and forecast.prediction_time > datetime.now().astimezone()),
+            None
+        ),
+        extra_state_attributes_fn=lambda forecasts: {
+            'precipitation': next(
+                (forecast.precipitation for forecast in forecasts if
+                 forecast.precipitation > 0 and forecast.prediction_time > datetime.now().astimezone()),
                 None
             )
         },

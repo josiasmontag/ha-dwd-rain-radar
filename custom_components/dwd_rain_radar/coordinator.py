@@ -20,7 +20,7 @@ from .radolan import Radolan
 
 _LOGGER = logging.getLogger(__name__)
 
-UPDATE_INTERVAL = timedelta(seconds=300)
+UPDATE_INTERVAL = timedelta(seconds=60)
 
 
 @dataclass(slots=True)
@@ -33,8 +33,8 @@ class PrecipitationForecast:
     def from_radolan_data(cls, data) -> PrecipitationForecast:
         """Return instance of Precipitation."""
         return cls(
-            prediction_time=pd.to_datetime(data.prediction_time.values[0]).to_pydatetime(),
-            precipitation=data.RV.values.item()
+            prediction_time=pd.to_datetime(data.prediction_time.values[0], utc=True).to_pydatetime().astimezone(),
+            precipitation=round(data.RV.values.item(), 2)
         )
 
 

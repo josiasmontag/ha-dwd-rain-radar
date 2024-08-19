@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-
+import asyncio
 import tarfile
+import logging
 from io import BytesIO
 
 import wradlib as wrl
@@ -11,6 +12,8 @@ import numpy as np
 from datetime import datetime, timedelta, timezone
 
 from .const import DWD_RADAR_COMPOSITE_RV_URL
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Radolan:
@@ -41,13 +44,19 @@ class Radolan:
 
         resp = await self._async_client.get(url, headers=headers)
 
+        _LOGGER.debug(f"Response {resp.status_code} (Headers: {resp.headers}) from {url}")
+
         if resp.status_code == 304:
             return self.curr_value
 
         if resp.status_code != httpx.codes.OK:
             resp.raise_for_status()
 
-        self.curr_value = self._parse(resp.read())
+        loop = asyncio.get_running_loop()
+
+        self.curr_value = await loop.run_in_executor(None, self._parse, resp.read())
+
+        self._last_etag = resp.headers["ETag"]
 
         return self.curr_value
 

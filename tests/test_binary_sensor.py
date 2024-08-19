@@ -1,4 +1,4 @@
-"""Test sensor for DWD rain radar integration."""
+"""Test binary sensor for DWD rain radar integration."""
 import os
 
 import pytest
@@ -10,10 +10,10 @@ from typing_extensions import Generator
 
 from custom_components.dwd_rain_radar.const import DOMAIN
 
-
 # Example binary data to return
 with open(os.path.dirname(__file__) + '/DE1200_RV_LATEST.tar.bz2', 'rb') as f:
     binary_data = f.read()
+
 
 @pytest.fixture
 def entity_registry_enabled_by_default() -> Generator[None]:
@@ -27,8 +27,8 @@ def entity_registry_enabled_by_default() -> Generator[None]:
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient.get', new_callable=AsyncMock)
 @freeze_time("2024-08-08T15:47:00", tz_offset=2)
-async def test_sensor(mock_get, hass, enable_custom_integrations, entity_registry_enabled_by_default):
-    """Test sensor."""
+async def test_binary_sensor(mock_get, hass, enable_custom_integrations, entity_registry_enabled_by_default):
+    """Test binary sensor."""
 
     # Create a mock response object
     mock_response = MagicMock()
@@ -49,29 +49,13 @@ async def test_sensor(mock_get, hass, enable_custom_integrations, entity_registr
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
+    raining = hass.states.get("binary_sensor.mock_title_raining")
 
+    assert raining
+    assert raining.state == 'on'
+    assert raining.attributes['prediction_time'].isoformat() == '2024-08-08T17:50:00+02:00'
 
-    precipitation = hass.states.get("sensor.mock_title_precipitation")
-
-    assert precipitation
-    assert precipitation.state == '0.84'
-    assert precipitation.attributes['prediction_time'].isoformat() == '2024-08-08T17:50:00+02:00'
-    assert precipitation.attributes['unit_of_measurement'] == 'mm'
-    assert precipitation.attributes['device_class'] == 'precipitation'
-
-
-    precipitation_10_minutes = hass.states.get("sensor.mock_title_precipitation_in_10_minutes")
-    assert precipitation_10_minutes
-    assert precipitation_10_minutes.state == '0.12'
-    assert precipitation_10_minutes.attributes['prediction_time'].isoformat() == '2024-08-08T17:55:00+02:00'
-
-    rain_expected_at = hass.states.get("sensor.mock_title_rain_expected_at")
-
-    assert rain_expected_at
-    assert rain_expected_at.state == '2024-08-08T17:50:00+02:00'
-
-
-    rain_expected_in_minutes = hass.states.get("sensor.mock_title_rain_expected_in_minutes")
-
-    assert rain_expected_in_minutes
-    assert rain_expected_in_minutes.state == '3'
+    raining_in_120_minutes = hass.states.get("binary_sensor.mock_title_raining_in_120_minutes")
+    assert raining_in_120_minutes
+    assert raining_in_120_minutes.state == 'off'
+    assert raining_in_120_minutes.attributes['prediction_time'].isoformat() == '2024-08-08T19:45:00+02:00'
