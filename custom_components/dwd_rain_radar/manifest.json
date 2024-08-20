@@ -9,9 +9,6 @@
   "documentation": "https://github.com/josiasmontag/ha-dwd-rain-radar",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/josiasmontag/ha-dwd-rain-radar/issues",
-  "requirements": [
-    "wradlib==2.1.0",
-    "numpy"
-  ],
+  "requirements": [],
   "version": "0.1.0"
 }

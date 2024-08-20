@@ -11,9 +11,7 @@ from typing_extensions import Generator
 
 from custom_components.dwd_rain_radar.const import DOMAIN
 
-# Example binary data to return
-with open(os.path.dirname(__file__) + '/DE1200_RV_LATEST.tar.bz2', 'rb') as f:
-    binary_data = f.read()
+
 
 
 @pytest.fixture
@@ -41,6 +39,10 @@ def set_timezone():
 @freeze_time("2024-08-08T15:47:00", tz_offset=2)
 async def test_binary_sensor(mock_get, hass, enable_custom_integrations, entity_registry_enabled_by_default):
     """Test binary sensor."""
+
+    # Example binary data to return
+    with open(os.path.dirname(__file__) + '/DE1200_RV_LATEST.tar.bz2', 'rb') as f:
+        binary_data = f.read()
 
     # Create a mock response object
     mock_response = MagicMock()

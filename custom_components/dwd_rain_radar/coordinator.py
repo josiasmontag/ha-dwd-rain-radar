@@ -32,9 +32,10 @@ class PrecipitationForecast:
     @classmethod
     def from_radolan_data(cls, data) -> PrecipitationForecast:
         """Return instance of Precipitation."""
+        """Precipitation is in 5 minute interval. Multiple it with 12 to get hourly precipitation."""
         return cls(
-            prediction_time=pd.to_datetime(data.prediction_time.values[0], utc=True).to_pydatetime().astimezone(),
-            precipitation=round(data.RV.values.item(), 2)
+            prediction_time=data['timestamp'].astimezone(),
+            precipitation=round(data['value'] * 12, 2)
         )
 
 
