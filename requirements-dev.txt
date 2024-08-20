@@ -1,6 +1,3 @@
-# From our manifest.json for our custom component
-pyproj
-
 # Strictly for tests
 pytest-homeassistant-custom-component>=0.13.127
 pytest

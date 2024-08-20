@@ -8,7 +8,7 @@ import httpx
 
 from datetime import datetime, timedelta, timezone
 
-from pyproj import Transformer
+import math
 
 from .const import DWD_RADAR_COMPOSITE_RV_URL
 
@@ -135,21 +135,39 @@ class Radolan:
                 else:
                     return float(int.from_bytes(valBytes, 'little')) * header['precision']
 
-    def _get_radolan_grid(self, ds):
-        """Create the Radolan latitude and longitude grid."""
-        grid_age = datetime.now(timezone.utc) - self._last_grid_update
-        to_refresh = grid_age > timedelta(hours=24)
-        if to_refresh or self._radolan_grid is None:
-            # Create the grid here; replace the wradlib logic with a custom calculation if needed
-            self._radolan_grid = self._generate_radolan_grid(nrows=ds['dimension']['y'], ncols=ds['dimension']['x'])
-
-        return self._radolan_grid
-
     def _get_radolan_rv_coord(self):
+        """Calculate Radolan grid coordinates for the given latitude and longitude."""
+        """see https://debug-docs.readthedocs.io/en/conda_pip/notebooks/radolan/radolan_grid.html#Polar-Stereographic-Projection"""
         """see https://www.dwd.de/DE/leistungen/radarprodukte/formatbeschreibung_rv.pdf"""
         if self._radolan_coord is None:
-            transformer = Transformer.from_proj("EPSG:4326",
-                                                "+proj=stere +lat_0=90 +lat_ts=60 +lon_0=10 +a=6378137 +b=6356752.3142451802 +no_defs +x_0=543696.83521776402 +y_0=3622088.8619310018")
-            (x, y) = transformer.transform(self._lat, self._lon)
+            lat_0 = 90  # Latitude of the projection's origin (north pole)
+            lon_0 = 10  # Longitude of the central meridian
+            a = 6378137  # Semi-major axis (WGS84)
+            b = 6356752.3142451802  # Semi-minor axis (WGS84)
+            e2 = 1 - (b ** 2 / a ** 2)  # Eccentricity squared
+            lat_ts = 60  # Latitude of true scale
+            x_0 = 543696.83521776402
+            y_0 = 3622088.8619310018
+
+            lat_rad = math.radians(self._lat)
+            lon_rad = math.radians(self._lon)
+            lat_0_rad = math.radians(lat_0)
+            lon_0_rad = math.radians(lon_0)
+            lat_ts_rad = math.radians(lat_ts)
+
+            t = math.tan(math.pi / 4 - lat_rad / 2) / (
+                    (1 - math.sqrt(e2) * math.sin(lat_rad)) / (1 + math.sqrt(e2) * math.sin(lat_rad))) ** (
+                        math.sqrt(e2) / 2)
+            t_0 = math.tan(math.pi / 4 - lat_ts_rad / 2) / (
+                    (1 - math.sqrt(e2) * math.sin(lat_ts_rad)) / (1 + math.sqrt(e2) * math.sin(lat_ts_rad))) ** (
+                          math.sqrt(e2) / 2)
+
+            m = a * math.cos(lat_ts_rad) / math.sqrt(1 - e2 * math.sin(lat_ts_rad) ** 2)
+
+            rho = m * t / t_0
+            x = x_0 + rho * math.sin(lon_rad - lon_0_rad)
+            y = y_0 - rho * math.cos(lon_rad - lon_0_rad)
+
             self._radolan_coord = ((int(round(x / 1000, 0)), int(round(y / 1000 + 1200, 0))))
+
         return self._radolan_coord

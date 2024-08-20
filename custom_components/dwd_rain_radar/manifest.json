@@ -10,7 +10,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/josiasmontag/ha-dwd-rain-radar/issues",
   "requirements": [
-    "pyproj"
   ],
   "version": "0.1.0"
 }
