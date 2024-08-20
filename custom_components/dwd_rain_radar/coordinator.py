@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-import pandas as pd
 from dataclasses import dataclass
 from typing import List
 
